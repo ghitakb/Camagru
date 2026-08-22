@@ -1,0 +1,18 @@
+# Docker Compose lets us run multiple services, today it's web, but we can add more later, like a database or a cache.
+services:
+  web:
+    image: php:8.3-cli
+    # downloads an environment containing PHP 8.3.
+
+    working_dir: /app
+    # Inside the container, /app will be the working directory. This is where we will mount our code.
+
+    volumes:
+      - .:/app
+    # your computer (camagru/)  ────►  container (/app)
+
+    ports:
+      - "8000:8000"
+
+    command: php -S 0.0.0.0:8000 -t Backend
+    # php -S : start server. 0.0.0.0:8000 : listen on port 8000. -t backend : serve files from the Backend directory. therefore, if you go to http://localhost:8000/hello.php, it will serve the file Backend/hello.php.
