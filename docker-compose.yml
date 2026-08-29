@@ -1,8 +1,18 @@
 # Docker Compose lets us run multiple services, today it's web, but we can add more later, like a database or a cache.
 services:
   web:
-    image: php:8.3-cli
-    # downloads an environment containing PHP 8.3.
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    # downloads an environment containing PHP 8.3. and pdo-mysql extension. The context is the current directory, and the dockerfile is located in docker/php/Dockerfile.
+
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    # environment variables are used to configure the database connection. The values are taken from the .env file.
 
     working_dir: /app
     # Inside the container, /app will be the working directory. This is where we will mount our code.
@@ -14,5 +24,31 @@ services:
     ports:
       - "8000:8000"
 
-    command: php -S 0.0.0.0:8000 -t Backend
-    # php -S : start server. 0.0.0.0:8000 : listen on port 8000. -t backend : serve files from the Backend directory. therefore, if you go to http://localhost:8000/hello.php, it will serve the file Backend/hello.php.
+    command: php -S 0.0.0.0:8000 -t public
+    # php -S : start server. 0.0.0.0:8000 : listen on port 8000. -t public : serve files from the public directory. therefore, if you go to http://localhost:8000/index.php, it will serve the file public/index.php.
+
+  db:
+    image: mariadb:11
+    # downloads an environment containing MariaDB 11.
+
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    # environment variables are used to configure the database. The values are taken from the .env file.
+
+    # ports:
+    #   - "3306:3306"
+    # # maps port 3306 on your computer to port 3306 in the container, so you can connect to the database from your computer.
+
+
+    volumes:
+      - db_data:/var/lib/mysql
+      # Database volume is different. MariaDB stores its actual database files inside: /var/lib/mysql inside its container.
+      # This is a named volume that will persist the database data even if the container is removed. The data will be stored in /var/lib/mysql inside the container.
+      - ./databases/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      # Make our SQL initialization file available to MariaDB when it initializes. :ro means read only
+
+volumes:
+  db_data:
